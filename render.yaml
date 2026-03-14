@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nexora-lead-engine
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: PORT
+        value: 3000

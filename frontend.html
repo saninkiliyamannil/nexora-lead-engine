@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexora Lead Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ac:#6C5CE7;--ok:#00B894;--err:#D63031;--warn:#FDCB6E;--ig:#E1306C;--f:'Syne',sans-serif;--m:'DM Mono',monospace;--bg:#f8f8f6;--card:#fff;--border:#e8e6e0;--text:#1a1a1a;--muted:#6b6b6b;--hint:#a0a0a0}
+body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100vh}
+.shell{max-width:920px;margin:0 auto;padding:24px 16px 60px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.logo-row{display:flex;align-items:center;gap:11px}
+.logo{width:42px;height:42px;border-radius:11px;background:var(--ac);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff}
+.brand{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.brand em{color:var(--ac);font-style:normal}
+.version{font-size:10px;font-family:var(--m);color:var(--hint);background:#f0eefb;padding:3px 9px;border-radius:20px;border:0.5px solid #d0cbf5}
+
+.tabs{display:flex;gap:3px;background:#eeece6;border-radius:12px;padding:3px;margin-bottom:18px}
+.tab{flex:1;padding:8px 8px;border-radius:9px;font-family:var(--f);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;color:var(--muted);background:transparent}
+.tab.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pane{display:none}.pane.on{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700;margin-bottom:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:11px;color:var(--muted);font-weight:500}
+input,select,textarea{padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:#fafaf8;font-family:var(--m);font-size:12px;color:var(--text);outline:none;width:100%;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+
+.big-btn{width:100%;padding:13px;border-radius:12px;font-family:var(--f);font-size:14px;font-weight:800;cursor:pointer;border:none;background:var(--ac);color:#fff;letter-spacing:-.2px;transition:opacity .15s}
+.big-btn:hover{opacity:.87}
+.big-btn:disabled{opacity:.4;cursor:not-allowed}
+.sm-btn{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:#fafaf8;font-family:var(--f);font-size:12px;font-weight:600;color:var(--text);cursor:pointer;transition:all .15s}
+.sm-btn:hover{border-color:var(--ac);color:var(--ac)}
+.copy-btn{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:#fafaf8;font-family:var(--f);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
+.copy-btn:hover{border-color:var(--ac);color:var(--ac)}
+.copy-btn.done{border-color:var(--ok);color:var(--ok)}
+
+/* Status + logs */
+.prog-bar{height:4px;background:#eee;border-radius:3px;overflow:hidden;margin-bottom:10px}
+.prog-fill{height:100%;background:var(--ac);border-radius:3px;width:0%;transition:width .4s ease}
+.status-txt{font-size:11px;color:var(--muted);font-family:var(--m);min-height:18px;margin-bottom:8px}
+.err-box{background:#fff5f5;border:1px solid #f5c6c6;border-radius:10px;padding:11px 14px;font-size:12px;color:var(--err);font-family:var(--m);line-height:1.6;margin-bottom:12px;display:none}
+.ok-box{background:#f0faf6;border:1px solid #a8e6cf;border-radius:10px;padding:11px 14px;font-size:12px;color:#1b7a52;font-family:var(--m);line-height:1.6;margin-bottom:12px;display:none}
+.log-wrap{background:#1a1a2e;border-radius:10px;padding:12px 14px;max-height:180px;overflow-y:auto;margin-bottom:12px;display:none}
+.log-line{font-family:var(--m);font-size:11px;color:#a0e4cb;line-height:1.7;padding:1px 0}
+.log-line.err{color:#ff8080}
+.log-line.ok{color:#80ff9e}
+.log-line.info{color:#80c8ff}
+
+/* Backend config */
+.backend-row{display:flex;gap:8px;margin-bottom:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;margin-top:4px}
+.status-dot.green{background:var(--ok)}
+.status-dot.red{background:var(--err)}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 14px}
+.stat-n{font-size:22px;font-weight:800;color:var(--ac)}
+.stat-l{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Lead cards */
+.lead-card{background:var(--card);border:1px solid var(--border);border-radius:13px;margin-bottom:10px;overflow:hidden}
+.lead-top{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;transition:background .12s}
+.lead-top:hover{background:#fafaf8}
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;color:#fff}
+.l-info{flex:1;min-width:0}
+.l-name{font-size:13px;font-weight:700}
+.l-sub{font-size:11px;color:var(--muted);margin-top:1px;font-family:var(--m)}
+.l-contact{font-size:10px;color:var(--hint);margin-top:2px;font-family:var(--m)}
+.l-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;font-family:var(--m);white-space:nowrap}
+.b-ig{background:#fce4ec;color:#880e4f}
+.b-em{background:#e3f2fd;color:#0d47a1}
+.b-fit{background:#e8f5e9;color:#1b5e20}
+.b-contacted{background:#fff8e1;color:#795548}
+.b-real{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.chev{font-size:16px;color:var(--hint);margin-left:4px;transition:transform .2s;flex-shrink:0}
+.chev.open{transform:rotate(90deg)}
+.lead-body{border-top:1px solid var(--border);padding:15px;display:none}
+.lead-body.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.di{background:#fafaf8;border-radius:8px;padding:9px 11px;border:1px solid var(--border)}
+.di-l{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:2px}
+.di-v{font-size:12px;color:var(--text);font-family:var(--m);word-break:break-all}
+.svc-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.svc-tag{font-size:10px;padding:3px 9px;border-radius:20px;background:#f5f5f5;border:1px solid #e0e0e0;color:var(--muted);font-family:var(--m)}
+.svc-tag.match{background:#EEEDFE;border-color:#AFA9EC;color:#3C3489}
+.intro-block{background:#f8f7ff;border:1px solid #e0dcfb;border-radius:10px;padding:13px;margin-bottom:12px}
+.intro-lbl{font-size:10px;font-weight:600;color:#534AB7;letter-spacing:.4px;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.intro-text{font-size:12px;color:var(--text);line-height:1.75;font-family:var(--m);white-space:pre-wrap;word-break:break-word}
+.slbl{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px}
+.pain-box{font-size:12px;color:var(--text);font-family:var(--m);line-height:1.6;background:#fafaf8;border-radius:8px;padding:10px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.action-row{display:flex;gap:7px;flex-wrap:wrap}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fb{font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:#fafaf8;color:var(--muted);cursor:pointer;font-family:var(--m);transition:all .15s}
+.fb.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.empty{text-align:center;padding:40px 20px;font-size:12px;color:var(--hint);font-family:var(--m);line-height:1.8}
+.ip-body{font-size:12px;color:var(--text);line-height:1.8;font-family:var(--m);white-space:pre-wrap;background:#fafaf8;border-radius:9px;padding:13px;margin-bottom:10px;border:1px solid var(--border)}
+.ol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ol-item{background:#fafaf8;border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.ol-svc{font-size:10px;font-weight:600;color:var(--ac);margin-bottom:3px;font-family:var(--m)}
+.ol-line{font-size:12px;color:var(--text);line-height:1.5}
+.real-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;border-radius:5px;padding:2px 7px;font-family:var(--m);font-weight:600}
+
+@media(max-width:560px){.row2,.row3,.detail-grid{grid-template-columns:1fr}.stat-row{grid-template-columns:1fr 1fr}.ol-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="hdr">
+  <div class="logo-row">
+    <div class="logo">NX</div>
+    <div>
+      <div class="brand">Nexora <em>Lead Engine</em></div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="version">v2.0 — Live</span>
+    <button class="sm-btn" onclick="exportCSV()">Export CSV</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="sw('find')">Find Leads</button>
+  <button class="tab" onclick="sw('leads')">Leads (<span id="tc">0</span>)</button>
+  <button class="tab" onclick="sw('config')">Backend Config</button>
+  <button class="tab" onclick="sw('intro')">Agency Intro</button>
+</div>
+
+<!-- FIND -->
+<div class="pane on" id="pane-find">
+
+  <div class="card">
+    <div class="card-title">Search parameters</div>
+    <div class="row2">
+      <div class="fg">
+        <div class="fl">Industry / niche</div>
+        <select id="niche-sel">
+          <option>Music label</option>
+          <option>Video production house</option>
+          <option>Forex trading firm</option>
+          <option>Cybersecurity company</option>
+          <option>Restaurant or food brand</option>
+          <option>E-commerce brand</option>
+          <option>Real estate agency</option>
+          <option>Fitness or wellness brand</option>
+          <option>Creative agency</option>
+          <option>Tech startup</option>
+          <option>Law firm</option>
+          <option>Photography studio</option>
+          <option>Content creator</option>
+          <option>Software company</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="fl">Seed Instagram account (to scrape followers from)</div>
+        <input id="seed-inp" placeholder="e.g. videoproductionindia" value="">
+      </div>
+    </div>
+    <div class="row3">
+      <div class="fg">
+        <div class="fl">Location</div>
+        <select id="loc-sel">
+          <option>India</option>
+          <option>UAE</option>
+          <option>India and UAE</option>
+          <option>USA</option>
+          <option>UK</option>
+          <option>Global</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="fl">Number of leads</div>
+        <select id="count-sel">
+          <option value="5">5 leads</option>
+          <option value="10" selected>10 leads</option>
+          <option value="15">15 leads</option>
+          <option value="20">20 leads</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="fl">Message tone</div>
+        <select id="tone-sel">
+          <option>Friendly and casual</option>
+          <option>Professional and direct</option>
+          <option>Bold and confident</option>
+          <option>Warm and consultative</option>
+        </select>
+      </div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog"></div></div>
+    <div class="status-txt" id="status-txt"></div>
+    <div class="err-box" id="err-box"></div>
+    <div class="ok-box" id="ok-box"></div>
+    <div class="log-wrap" id="log-wrap"><div id="log-lines"></div></div>
+    <button class="big-btn" id="find-btn" onclick="findLeads()">Find Real Leads</button>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-n" id="sn-total">0</div><div class="stat-l">Total leads</div></div>
+    <div class="stat"><div class="stat-n" id="sn-real">0</div><div class="stat-l">Real IG accounts</div></div>
+    <div class="stat"><div class="stat-n" id="sn-emails">0</div><div class="stat-l">Emails found</div></div>
+    <div class="stat"><div class="stat-n" id="sn-contacted">0</div><div class="stat-l">Contacted</div></div>
+  </div>
+</div>
+
+<!-- LEADS -->
+<div class="pane" id="pane-leads">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:700">All leads (<span id="lc-hdr">0</span>)</div>
+    <div style="display:flex;gap:7px">
+      <button class="sm-btn" onclick="sw('find')">+ Find more</button>
+      <button class="sm-btn" onclick="exportCSV()">Export CSV</button>
+    </div>
+  </div>
+  <div class="filter-row" id="frow"><span class="fb on" onclick="fil('all',this)">All</span></div>
+  <div id="leads-list"><div class="empty">No leads yet — go to Find Leads to start.</div></div>
+</div>
+
+<!-- BACKEND CONFIG -->
+<div class="pane" id="pane-config">
+  <div class="card">
+    <div class="card-title">Backend server URL</div>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--m);margin-bottom:10px;line-height:1.6">
+      Deploy the backend to Render/Railway and paste your live URL here. The app will call it for all real lead scraping.
+    </div>
+    <div class="backend-row">
+      <span class="status-dot" id="backend-dot"></span>
+      <input id="backend-url" placeholder="https://nexora-lead-engine.onrender.com" value="">
+      <button class="sm-btn" onclick="testBackend()" style="flex-shrink:0">Test</button>
+      <button class="sm-btn" style="flex-shrink:0;border-color:var(--ac);color:var(--ac)" onclick="saveBackend()">Save</button>
+    </div>
+    <div id="backend-msg" style="font-size:11px;font-family:var(--m);margin-top:6px;min-height:16px;color:var(--muted)"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">How to deploy the backend (free)</div>
+    <div style="font-size:12px;font-family:var(--m);color:var(--muted);line-height:2">
+      1. Download the backend ZIP from this package<br>
+      2. Push it to a new GitHub repository<br>
+      3. Go to <strong style="color:var(--ac)">render.com</strong> → New Web Service → connect your repo<br>
+      4. Add environment variable: <strong style="color:var(--text)">ANTHROPIC_API_KEY</strong> = your Claude API key<br>
+      5. Click Deploy — Render gives you a free live URL<br>
+      6. Paste that URL above and click Save
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">APIs connected</div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;font-family:var(--m)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="status-dot green"></span>
+        <div><div style="font-weight:600;color:var(--text)">Instagram Scraper (RapidAPI)</div><div style="color:var(--muted)">instagram-scraper-stable-api.p.rapidapi.com</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="status-dot green"></span>
+        <div><div style="font-weight:600;color:var(--text)">Instagram Email Finder (RapidAPI)</div><div style="color:var(--muted)">instagram-email-contact-finder.p.rapidapi.com</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="status-dot green"></span>
+        <div><div style="font-weight:600;color:var(--text)">ProxyCurl LinkedIn (RapidAPI)</div><div style="color:var(--muted)">proxycurl.p.rapidapi.com</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="status-dot" id="claude-dot"></span>
+        <div><div style="font-weight:600;color:var(--text)">Claude AI (Anthropic)</div><div style="color:var(--muted)">Set ANTHROPIC_API_KEY in backend .env</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="pane" id="pane-intro">
+  <div class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px">Full agency introduction</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Copy and use this anywhere to introduce Nexora.</div>
+    <div class="ip-body" id="full-intro">Hi, I'm reaching out from Nexora — a full-service creative and tech agency.
+
+Website: buildwithnexora.netlify.app
+
+We cover everything under one roof:
+
+Creative — Logo Design, Graphic Design, Photo Editing, Video Production, Music Production, Content Writing
+
+Tech — Web Development, Full Stack Development, Programming, Firewall Development, Ethical Hacking and Security Audits
+
+Specialist — Forex Trading consultation and systems
+
+Most businesses juggle 4–5 different vendors for these. We become your single trusted partner across all of them.
+
+Would love to explore what we can build together.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="copy-btn" id="cb-full" onclick="cp('full-intro','cb-full')">Copy</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px">Service one-liners</div>
+    <div class="ol-grid">
+      <div class="ol-item"><div class="ol-svc">Logo Design</div><div class="ol-line">Brand identities that make you unforgettable.</div></div>
+      <div class="ol-item"><div class="ol-svc">Content Writing</div><div class="ol-line">Words that convert — copy, blogs, full strategy.</div></div>
+      <div class="ol-item"><div class="ol-svc">Programming</div><div class="ol-line">Custom software and automation, built your way.</div></div>
+      <div class="ol-item"><div class="ol-svc">Ethical Hacking</div><div class="ol-line">We find your vulnerabilities before attackers do.</div></div>
+      <div class="ol-item"><div class="ol-svc">Music Prod.</div><div class="ol-line">Studio-quality music from composition to final mix.</div></div>
+      <div class="ol-item"><div class="ol-svc">Video Prod.</div><div class="ol-line">Cinematic video content that drives real results.</div></div>
+      <div class="ol-item"><div class="ol-svc">Photo Editing</div><div class="ol-line">Professional retouching at any scale, any deadline.</div></div>
+      <div class="ol-item"><div class="ol-svc">Graphic Design</div><div class="ol-line">Visuals that stop the scroll — social, print, digital.</div></div>
+      <div class="ol-item"><div class="ol-svc">Firewall Dev</div><div class="ol-line">Custom network security built to protect your business.</div></div>
+      <div class="ol-item"><div class="ol-svc">Web Dev</div><div class="ol-line">Fast, beautiful websites that work as hard as you do.</div></div>
+      <div class="ol-item"><div class="ol-svc">Full Stack</div><div class="ol-line">End-to-end product development, database to UI.</div></div>
+      <div class="ol-item"><div class="ol-svc">Forex Trading</div><div class="ol-line">Expert Forex systems, signals, and consultation.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SVCS = ['Logo Design','Content Writing','Programming','Ethical Hacking','Music Prod.','Video Prod.','Photo Editing','Graphic Design','Firewall Dev','Web Dev','Full Stack','Forex Trading'];
+const COLORS = ['#6C5CE7','#E84393','#00B894','#E17055','#0984E3','#D63031','#A29BFE','#636E72','#FD79A8','#FDCB6E','#0F6E56','#534AB7'];
+const state = { leads:[], filter:'all', backendUrl: localStorage.getItem('nexora_backend') || '' };
+
+// Init
+if(state.backendUrl) document.getElementById('backend-url').value = state.backendUrl;
+updateCounts();
+
+function sw(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',['find','leads','config','intro'][i]===id));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pane-'+id).classList.add('on');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function initials(n){return (n||'??').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+function setProg(p){document.getElementById('prog').style.width=p+'%'}
+function setStatus(t){document.getElementById('status-txt').textContent=t}
+function showErr(t){const e=document.getElementById('err-box');e.style.display=t?'block':'none';e.textContent=t}
+function showOk(t){const e=document.getElementById('ok-box');e.style.display=t?'block':'none';e.textContent=t}
+
+function addLog(msg, type=''){
+  const wrap = document.getElementById('log-wrap');
+  const lines = document.getElementById('log-lines');
+  wrap.style.display='block';
+  const d=document.createElement('div');
+  d.className='log-line '+(type||'');
+  d.textContent='> '+msg;
+  lines.appendChild(d);
+  wrap.scrollTop=wrap.scrollHeight;
+}
+
+function clearLogs(){
+  document.getElementById('log-lines').innerHTML='';
+  document.getElementById('log-wrap').style.display='none';
+}
+
+// ── BACKEND CONFIG ──
+function saveBackend(){
+  const url = document.getElementById('backend-url').value.trim().replace(/\/$/,'');
+  state.backendUrl = url;
+  localStorage.setItem('nexora_backend', url);
+  document.getElementById('backend-msg').textContent = 'Saved. Click Test to verify connection.';
+  document.getElementById('backend-msg').style.color = 'var(--muted)';
+}
+
+async function testBackend(){
+  const url = document.getElementById('backend-url').value.trim().replace(/\/$/,'');
+  if(!url){document.getElementById('backend-msg').textContent='Enter a URL first.';return;}
+  document.getElementById('backend-msg').textContent='Testing...';
+  try{
+    const res = await fetch(url+'/');
+    const data = await res.json();
+    if(data.status){
+      document.getElementById('backend-dot').className='status-dot green';
+      document.getElementById('claude-dot').className='status-dot green';
+      document.getElementById('backend-msg').style.color='#1b7a52';
+      document.getElementById('backend-msg').textContent='Connected: '+data.status;
+      state.backendUrl=url;
+      localStorage.setItem('nexora_backend',url);
+    }
+  }catch(e){
+    document.getElementById('backend-dot').className='status-dot red';
+    document.getElementById('backend-msg').style.color='var(--err)';
+    document.getElementById('backend-msg').textContent='Connection failed: '+e.message;
+  }
+}
+
+// ── FIND LEADS ──
+async function findLeads(){
+  const backendUrl = state.backendUrl || document.getElementById('backend-url').value.trim().replace(/\/$/,'');
+  if(!backendUrl){
+    showErr('No backend URL set. Go to Backend Config tab, deploy the server, and paste your URL.');
+    sw('config'); return;
+  }
+
+  const niche   = document.getElementById('niche-sel').value;
+  const seed    = document.getElementById('seed-inp').value.trim();
+  const loc     = document.getElementById('loc-sel').value;
+  const count   = parseInt(document.getElementById('count-sel').value)||10;
+  const tone    = document.getElementById('tone-sel').value;
+
+  const btn = document.getElementById('find-btn');
+  btn.disabled=true; btn.textContent='Finding real leads…';
+  showErr(''); showOk(''); clearLogs();
+  setProg(10); setStatus('Connecting to Nexora backend…');
+
+  try {
+    addLog('Connecting to backend: '+backendUrl, 'info');
+    addLog('Niche: '+niche+' | Location: '+loc+' | Count: '+count, 'info');
+    if(seed) addLog('Seed Instagram account: @'+seed, 'info');
+
+    setProg(25); setStatus('Scraping Instagram for real '+niche+' accounts…');
+
+    const res = await fetch(backendUrl+'/api/leads/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ niche, location:loc, count, tone, seed_account: seed||undefined })
+    });
+
+    setProg(75);
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error || 'Backend returned '+res.status);
+    }
+
+    const data = await res.json();
+
+    // Show backend logs
+    if(data.logs) data.logs.forEach(l => addLog(l, l.includes('fail')||l.includes('error')?'err':'ok'));
+
+    if(!data.leads || !data.leads.length) throw new Error('No leads returned. Try a different seed account or niche.');
+
+    setProg(100); setStatus('');
+    showOk(`Found ${data.leads.length} real leads — ${data.leads.filter(l=>l.email).length} with verified emails.`);
+
+    // Enrich and add
+    data.leads.forEach((l,i)=>{
+      l.id = Date.now()+i;
+      l.color = COLORS[i%COLORS.length];
+      l.initials = initials(l.name);
+      l.niche = l.niche||niche;
+      l.status = 'new';
+      l.isReal = true;
+    });
+
+    state.leads = [...data.leads, ...state.leads];
+    updateCounts(); updateFilters(); renderLeads();
+    sw('leads');
+    setTimeout(()=>{setProg(0);},1500);
+
+  } catch(err){
+    setProg(0); setStatus('');
+    showErr('Error: '+err.message);
+    addLog('FAILED: '+err.message, 'err');
+  }
+
+  btn.disabled=false; btn.textContent='Find Real Leads';
+}
+
+// ── LEADS ──
+function fil(f,el){
+  state.filter=f;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderLeads();
+}
+
+function updateCounts(){
+  const n=state.leads.length;
+  document.getElementById('tc').textContent=n;
+  document.getElementById('lc-hdr').textContent=n;
+  document.getElementById('sn-total').textContent=n;
+  document.getElementById('sn-real').textContent=state.leads.filter(l=>l.isReal).length;
+  document.getElementById('sn-emails').textContent=state.leads.filter(l=>l.email).length;
+  document.getElementById('sn-contacted').textContent=state.leads.filter(l=>l.status==='contacted').length;
+}
+
+function updateFilters(){
+  const niches=[...new Set(state.leads.map(l=>l.niche).filter(Boolean))];
+  const cur=state.filter;
+  document.getElementById('frow').innerHTML=
+    `<span class="fb${cur==='all'?' on':''}" onclick="fil('all',this)">All</span>`+
+    niches.map(n=>`<span class="fb${cur===n?' on':''}" onclick="fil('${n.replace(/'/g,"\\'")}',this)">${n.split(' ')[0]}</span>`).join('');
+}
+
+function renderLeads(){
+  const list=document.getElementById('leads-list');
+  const leads=state.filter==='all'?state.leads:state.leads.filter(l=>l.niche===state.filter);
+  if(!leads.length){list.innerHTML='<div class="empty">No leads here — generate more or change the filter.</div>';return;}
+  list.innerHTML=leads.map(l=>`
+    <div class="lead-card">
+      <div class="lead-top" onclick="toggle(${l.id})">
+        <div class="av" style="background:${l.color}">${l.initials}</div>
+        <div class="l-info">
+          <div class="l-name">${esc(l.name)} ${l.isReal?'<span class="real-badge">real</span>':''}</div>
+          <div class="l-sub">${esc(l.company||'')} · ${esc(l.location||'')}</div>
+          <div class="l-contact">${esc(l.contact||'')}${l.email?' · '+esc(l.email):''}</div>
+        </div>
+        <div class="l-right">
+          <span class="badge ${l.contactType==='instagram'?'b-ig':'b-em'}">${l.contactType==='instagram'?'Instagram':'Email'}</span>
+          <span class="badge ${l.status==='contacted'?'b-contacted':'b-fit'}">${l.status==='contacted'?'contacted':l.fitScore+'/100'}</span>
+        </div>
+        <span class="chev" id="chev-${l.id}">›</span>
+      </div>
+      <div class="lead-body" id="lb-${l.id}">
+        <div class="detail-grid">
+          <div class="di"><div class="di-l">Instagram</div><div class="di-v">${esc(l.contact||'—')}</div></div>
+          <div class="di"><div class="di-l">Email</div><div class="di-v">${esc(l.email||'not found')}</div></div>
+          <div class="di"><div class="di-l">Location</div><div class="di-v">${esc(l.location||'—')}</div></div>
+          <div class="di"><div class="di-l">Fit score</div><div class="di-v">${l.fitScore||'—'} / 100</div></div>
+        </div>
+        <div class="slbl">Pain point</div>
+        <div class="pain-box">${esc(l.painPoint||'—')}</div>
+        <div class="slbl">Matched Nexora services</div>
+        <div class="svc-row">${SVCS.map(s=>`<span class="svc-tag${(l.matchedServices||[]).includes(s)?' match':''}">${s}</span>`).join('')}</div>
+        <div class="intro-block">
+          <div class="intro-lbl">Personalised intro <button class="copy-btn" id="cp-${l.id}" onclick="cp('itx-${l.id}','cp-${l.id}')">Copy</button></div>
+          <div class="intro-text" id="itx-${l.id}">${esc(l.intro||'No intro generated.')}</div>
+        </div>
+        <div class="action-row">
+          <button class="sm-btn" onclick="regenIntro(${l.id})">Regenerate intro</button>
+          <button class="sm-btn" id="cont-${l.id}" onclick="markContacted(${l.id})">Mark contacted</button>
+          <button class="sm-btn" onclick="removeLead(${l.id})">Remove</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggle(id){
+  const b=document.getElementById('lb-'+id),c=document.getElementById('chev-'+id);
+  if(!b) return;
+  b.classList.toggle('open');
+  c.classList.toggle('open',b.classList.contains('open'));
+}
+
+function markContacted(id){
+  const l=state.leads.find(x=>x.id===id);
+  if(!l) return;
+  l.status='contacted';
+  renderLeads(); updateCounts();
+}
+
+function removeLead(id){
+  state.leads=state.leads.filter(x=>x.id!==id);
+  updateCounts(); updateFilters(); renderLeads();
+}
+
+async function regenIntro(id){
+  const l=state.leads.find(x=>x.id===id);
+  if(!l) return;
+  const backendUrl=state.backendUrl;
+  if(!backendUrl){alert('Set your backend URL in the Config tab first.');return;}
+  const el=document.getElementById('itx-'+id);
+  if(!el) return;
+  el.textContent='Regenerating…';
+  try{
+    const res=await fetch(backendUrl+'/api/leads/intro',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:l.name,company:l.company,niche:l.niche,location:l.location,painPoint:l.painPoint,matchedServices:l.matchedServices,tone:document.getElementById('tone-sel').value})
+    });
+    const d=await res.json();
+    if(d.intro){l.intro=d.intro;el.textContent=d.intro;}
+    else el.textContent='Failed — try again.';
+  }catch(e){el.textContent='Failed: '+e.message;}
+}
+
+function cp(elId,btnId){
+  const el=document.getElementById(elId),btn=document.getElementById(btnId);
+  if(!el||!btn) return;
+  navigator.clipboard.writeText(el.textContent||'').then(()=>{
+    const o=btn.textContent;btn.textContent='Copied!';btn.classList.add('done');
+    setTimeout(()=>{btn.textContent=o;btn.classList.remove('done');},2000);
+  });
+}
+
+function exportCSV(){
+  if(!state.leads.length){alert('No leads to export.');return;}
+  const rows=[['Name','Title','Company','Location','Instagram','Email','Niche','Fit Score','Pain Point','Services','Status','Intro']];
+  state.leads.forEach(l=>rows.push([l.name,l.title,l.company,l.location,l.contact,l.email||'',l.niche,l.fitScore,l.painPoint,(l.matchedServices||[]).join('|'),l.status,(l.intro||'').replace(/\n/g,' ')]));
+  const csv=rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='nexora_leads.csv';a.click();
+}
+</script>
+</body>
+</html>
