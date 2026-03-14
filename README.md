@@ -8,7 +8,7 @@ Real-time lead generation backend for Nexora agency.
 - ProxyCurl (RapidAPI) - LinkedIn company enrichment
 - Groq AI - qualifies leads and generates personalised intros
 
-## Setup
+## Local Setup
 
 ### 1. Install dependencies
 ```bash
@@ -30,71 +30,27 @@ npm start
 
 ---
 
-## Deploy to Render
+## Deploy to Netlify
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fsaninkiliyamannil%2Fnexora-lead-engine)
+1. Push this repo to GitHub
+2. In Netlify, choose `Add new site` -> `Import an existing project`
+3. Select `saninkiliyamannil/nexora-lead-engine`
+4. Leave the build command empty
+5. Set the publish directory to `.`
+6. Add environment variables:
+- `GROQ_API_KEY`
+- `RAPIDAPI_KEY`
+7. Deploy the site
 
-1. Open the deploy button above
-2. Sign in to Render
-3. Create the web service from this GitHub repo
-4. Set `GROQ_API_KEY` and `RAPIDAPI_KEY` during setup
-5. Deploy - Render will build from GitHub and auto-deploy future pushes
+Netlify serves the frontend from the repo root and routes `/api/*` to the serverless function defined in `netlify/functions/api.js` through `netlify.toml`.
 
----
-
-## API Endpoints
-
-### GET /
-Health check - returns server status.
-
-### POST /api/leads/generate
-**Main endpoint - full pipeline.**
-Scrapes Instagram -> finds emails -> qualifies with Groq -> returns leads.
-
-```json
-{
-  "niche": "Video production house",
-  "location": "India",
-  "count": 10,
-  "tone": "Friendly and casual",
-  "seed_account": "videoproductionindia"
-}
-```
-
-### POST /api/instagram/followers
-Get real followers of any Instagram account.
-```json
-{ "username": "videoproductionindia", "count": 20 }
-```
-
-### POST /api/instagram/email
-Get email from an Instagram profile URL.
-```json
-{ "instagram_url": "https://www.instagram.com/someaccount" }
-```
-
-### GET /api/linkedin/company
-Get LinkedIn company data.
-```
-/api/linkedin/company?url=https://www.linkedin.com/company/apple/
-```
-
-### POST /api/leads/intro
-Regenerate a personalised intro for one lead.
-```json
-{
-  "name": "Arjun Mehta",
-  "company": "FrameCraft Productions",
-  "niche": "Video production",
-  "location": "Mumbai, India",
-  "painPoint": "No strong web presence...",
-  "matchedServices": ["Web Dev", "Logo Design"],
-  "tone": "Friendly and casual"
-}
-```
-
----
+## Files for Netlify
+- `app.js`: shared Express app used by local dev and Netlify Functions
+- `server.js`: local Node entrypoint
+- `netlify/functions/api.js`: Netlify function wrapper
+- `netlify.toml`: publish/functions/redirect config
+- `frontend.html`: frontend UI source
+- `index.html`: Netlify default landing page entry
 
 ## Frontend
-Point the Nexora Lead Finder app to your deployed backend URL.
-Replace `BACKEND_URL` in the frontend with your Render URL.
+The frontend defaults to the current Netlify site URL. If you need to point it somewhere else, use the `Netlify Setup` tab in the UI.
