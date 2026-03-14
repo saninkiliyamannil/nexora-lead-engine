@@ -3,7 +3,7 @@
 Real-time lead generation backend for Nexora agency.
 
 ## APIs Used
-- Instagram Scraper (RapidAPI) - finds real business accounts by niche
+- Instagram User Info (RapidAPI) - fetches Instagram profile details by username or id
 - Instagram Email Finder (RapidAPI) - extracts emails from profiles
 - ProxyCurl (RapidAPI) - LinkedIn company enrichment
 - Groq AI - qualifies leads and generates personalised intros

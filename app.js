@@ -9,6 +9,8 @@ app.use(express.json());
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const INSTAGRAM_USERINFO_URL = 'https://instagram-scraper-20251.p.rapidapi.com/userinfo/';
+const INSTAGRAM_USERINFO_HOST = 'instagram-scraper-20251.p.rapidapi.com';
 
 function missingEnv(res, key) {
   return res.status(400).json({ error: `${key} not set in environment` });
@@ -24,18 +26,15 @@ app.post('/api/instagram/followers', async (req, res) => {
   if (!RAPIDAPI_KEY) return missingEnv(res, 'RAPIDAPI_KEY');
 
   try {
-    const response = await axios.post(
-      'https://instagram-scraper-stable-api.p.rapidapi.com/get_ig_user_followers_v2.php',
-      new URLSearchParams({ username, count: String(count) }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'x-rapidapi-host': 'instagram-scraper-stable-api.p.rapidapi.com',
-          'x-rapidapi-key': RAPIDAPI_KEY,
-        },
-      }
-    );
-    res.json({ success: true, data: response.data });
+    const profile = await fetchInstagramUserInfo(username);
+    res.json({
+      success: true,
+      data: {
+        username,
+        requestedCount: count,
+        profile,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message, details: err.response?.data });
   }
@@ -109,21 +108,11 @@ app.post('/api/leads/generate', async (req, res) => {
 
     let igProfiles = [];
     try {
-      const igRes = await axios.post(
-        'https://instagram-scraper-stable-api.p.rapidapi.com/get_ig_user_followers_v2.php',
-        new URLSearchParams({ username: seedAccount, count: String(Math.min(count * 3, 50)) }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'x-rapidapi-host': 'instagram-scraper-stable-api.p.rapidapi.com',
-            'x-rapidapi-key': RAPIDAPI_KEY,
-          },
-        }
-      );
-      igProfiles = igRes.data?.followers || igRes.data?.data || [];
-      logs.push(`Found ${igProfiles.length} raw Instagram profiles`);
+      const seedProfile = await fetchInstagramUserInfo(seedAccount);
+      igProfiles = [normalizeInstagramProfile(seedProfile, seedAccount)];
+      logs.push(`Loaded Instagram profile for @${seedAccount}`);
     } catch (e) {
-      logs.push(`Instagram scrape failed: ${e.message} - continuing with Groq-only mode`);
+      logs.push(`Instagram user lookup failed: ${e.message} - continuing with Groq-only mode`);
     }
 
     const enriched = [];
@@ -272,6 +261,34 @@ function getNicheSeed(niche) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchInstagramUserInfo(usernameOrId) {
+  const response = await axios.get(INSTAGRAM_USERINFO_URL, {
+    params: {
+      username_or_id: usernameOrId,
+    },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-rapidapi-host': INSTAGRAM_USERINFO_HOST,
+      'x-rapidapi-key': RAPIDAPI_KEY,
+    },
+  });
+
+  return response.data?.data || response.data?.user || response.data;
+}
+
+function normalizeInstagramProfile(profile, fallbackUsername) {
+  return {
+    username: profile?.username || fallbackUsername,
+    handle: profile?.username || fallbackUsername,
+    full_name: profile?.full_name || profile?.fullName || profile?.name || '',
+    name: profile?.full_name || profile?.fullName || profile?.name || '',
+    biography: profile?.biography || profile?.bio || '',
+    bio: profile?.biography || profile?.bio || '',
+    follower_count: profile?.follower_count || profile?.followers_count || profile?.followers || 0,
+    followers: profile?.follower_count || profile?.followers_count || profile?.followers || 0,
+  };
 }
 
 module.exports = app;
